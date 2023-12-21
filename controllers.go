@@ -4,12 +4,12 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"go-gin-finance/dbutils"
 	"io"
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
-
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -32,8 +32,8 @@ func GetOrders(c *gin.Context) {
 
 	rows, _ := db.Query("select * from orders")
 
-	var orderData []Orders
-	var order Orders
+	var orderData []dbutils.Orders
+	var order dbutils.Orders
 	for rows.Next() {
 
 		err := rows.Scan(&order.ID, &order.CustID, &order.Details)
@@ -60,7 +60,7 @@ func GetOrder(c *gin.Context) {
 
 	urlPathElements := strings.Split(c.Request.URL.Path, "/")
 	//fmt.Print(urlPathElements[4])
-	var order Orders
+	var order dbutils.Orders
 
 	rows := db.QueryRow("select * from orders where order_id = ?", urlPathElements[4])
 

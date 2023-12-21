@@ -1,11 +1,18 @@
 package main
 
 import (
+	"go-gin-finance/dbutils"
+
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
 	router := gin.Default()
+
+	// if there is an error opening the connection, handle it
+	db := createDBConn()
+
+	dbutils.Initialize(db)
 
 	v1 := router.Group("/api/v1")
 	{
