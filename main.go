@@ -20,6 +20,11 @@ func main() {
 
 		v1.GET("/orders/:id", GetOrder)
 		v1.POST("/orders", CreateOrder)
+
+		v1.POST("/employee", PutEmployee)
+		v1.GET("/employees", GetEmployees)
+		v1.GET("/employee", GetEmployee)
+
 		/*
 			v1.PUT("/orders/:id", UpdateUser)
 			v1.DELETE("/orders/:id", DeleteUser)
