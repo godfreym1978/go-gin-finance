@@ -1,3 +1,6 @@
+/*
+This is used to connect to MongoDB and MySQL to query, fetch or insert records.
+*/
 package main
 
 import (
@@ -16,6 +19,18 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
+
+/*
+
+Receives a JSON document in format specified to insert into the MongoDB
+{
+		{"fname", "John"},
+		{"lname", "Doe"},
+		{"company", "Great Corporation"},
+		{"emp_id", "123456"},
+	}
+
+*/
 
 func PutEmployee(c *gin.Context) {
 	// Implement logic to get employee from MongoDB
@@ -36,10 +51,10 @@ func PutEmployee(c *gin.Context) {
 	/* to insert a document into the MongoDB
 	var document interface{}
 	document = bson.D{
-		{"fname", "Godfrey"},
-		{"lname", "Menezes"},
-		{"company", "IBM"},
-		{"emp_id", "959454"},
+		{"fname", "John"},
+		{"lname", "Doe"},
+		{"company", "Great Corporation"},
+		{"emp_id", "123456"},
 	}
 
 	//_, err1 := collection.InsertOne(c, document)
@@ -58,6 +73,9 @@ func PutEmployee(c *gin.Context) {
 
 }
 
+/*
+To get all the records from the collection in the MongoDB
+*/
 func GetEmployees(c *gin.Context) {
 	// Implement logic to get employee from MongoDB
 	/*
@@ -95,6 +113,11 @@ func GetEmployees(c *gin.Context) {
 
 }
 
+/*
+To get records from the collection in the MongoDB using the search criteria as part of JSON post request. The message format can be something like this -
+{"fname": "John"}
+*/
+
 func GetEmployee(c *gin.Context) {
 	// Implement logic to get employee from MongoDB
 
@@ -131,6 +154,11 @@ func GetEmployee(c *gin.Context) {
 
 }
 
+/*
+Utility function to initiate the DB connection with MYSQL DB. The format is -
+
+("mysql", "user:password@tcp(host-ip:mysql-port)/db-name")
+*/
 func createDBConn() *sql.DB {
 	db, err := sql.Open("mysql", "root:passw0rd@tcp(127.0.0.1:3306)/finance")
 
@@ -140,6 +168,9 @@ func createDBConn() *sql.DB {
 	return db
 }
 
+/*
+Function to get all the records from the table
+*/
 func GetOrders(c *gin.Context) {
 	// if there is an error opening the connection, handle it
 	db := createDBConn()
@@ -167,6 +198,10 @@ func GetOrders(c *gin.Context) {
 
 }
 
+/*
+Function to get a single record from the table-
+The GET request will be in the format - http://localhost:8080/api/v1/orders/1007 with 1007 as the ID to be substituted in search in the DB
+*/
 func GetOrder(c *gin.Context) {
 	// Implement logic to fetch a single user
 
@@ -178,7 +213,6 @@ func GetOrder(c *gin.Context) {
 	defer db.Close()
 
 	urlPathElements := strings.Split(c.Request.URL.Path, "/")
-	//fmt.Print(urlPathElements[4])
 	var order dbutils.Orders
 
 	rows := db.QueryRow("select * from orders where order_id = ?", urlPathElements[4])
@@ -226,6 +260,17 @@ func CreateOrder(c *gin.Context) {
 	c.Header("Content-Type", "application/json")
 	c.IndentedJSON(http.StatusOK, jsonData)
 
+}
+*/
+
+/*
+Create a record in the DB as a POST. The input record will be in the format -
+
+{
+  "fname": "Jane",
+  "lname": "Doe",
+  "company": "Google",
+  "emp_id": "123456"
 }
 */
 

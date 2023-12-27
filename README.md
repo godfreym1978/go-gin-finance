@@ -42,3 +42,4 @@ It will return a single record from the DB
     "order_dtl": "pen"
 }
 
+This project also involves the use of MongoDB connector to serach and insert records in the MongoDB DB Collection
