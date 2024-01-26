@@ -1,3 +1,9 @@
+/* File: main.go
+
+Description:
+ This is the main file to start the application. Its also used to route the requests as defined in here.
+*/
+
 package main
 
 import (

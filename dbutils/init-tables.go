@@ -1,3 +1,9 @@
+/* File: init-tables.go
+
+Description:
+ Initiates the connection to databases and also creates the backend table for mysql to persist the records in the table
+*/
+
 package dbutils
 
 import (

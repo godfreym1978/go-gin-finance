@@ -1,12 +1,17 @@
 /*
-This is used to connect to MongoDB and MySQL to query, fetch or insert records.
+	File: controllers.go
+
+Description:
+
+	This is used to connect to MongoDB and MySQL to query, fetch or insert records.
 */
 package main
 
 import (
 	"database/sql"
 	"fmt"
-	"go-gin-finance/dbutils"
+	"go-gin-finance/config"
+	"go-gin-finance/entity"
 	"io"
 	"log"
 	"net/http"
@@ -35,8 +40,11 @@ Receives a JSON document in format specified to insert into the MongoDB
 func PutEmployee(c *gin.Context) {
 	// Implement logic to get employee from MongoDB
 
-	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017/")
+	config, err := config.BuildConfig()
+	dsn := fmt.Sprintf("mongodb://%s:%d/", config.Mongo.Host, config.Mongo.Port)
+	clientOptions := options.Client().ApplyURI(dsn)
 	client, err := mongo.Connect(c, clientOptions)
+
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -46,7 +54,7 @@ func PutEmployee(c *gin.Context) {
 		log.Fatal(err)
 	}
 
-	collection := client.Database("testdb").Collection("employee")
+	collection := client.Database(config.Mongo.Database).Collection(config.Mongo.Collection)
 
 	/* to insert a document into the MongoDB
 	var document interface{}
@@ -62,7 +70,7 @@ func PutEmployee(c *gin.Context) {
 	*/
 
 	//to insert a JSON request into the DB
-	var payload dbutils.Employee
+	var payload entity.Employee
 	c.BindJSON(&payload)
 
 	_, err1 := collection.InsertOne(c, payload)
@@ -84,7 +92,9 @@ func GetEmployees(c *gin.Context) {
 		https://stackoverflow.com/questions/39785289/how-to-marshal-json-string-to-bson-document-for-writing-to-mongodb
 	*/
 
-	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017/")
+	config, err := config.BuildConfig()
+	dsn := fmt.Sprintf("mongodb://%s:%d/", config.Mongo.Host, config.Mongo.Port)
+	clientOptions := options.Client().ApplyURI(dsn)
 	client, err := mongo.Connect(c, clientOptions)
 	if err != nil {
 		log.Fatal(err)
@@ -95,10 +105,9 @@ func GetEmployees(c *gin.Context) {
 		log.Fatal(err)
 	}
 
-	collection := client.Database("testdb").Collection("employee")
+	collection := client.Database(config.Mongo.Database).Collection(config.Mongo.Collection)
 
-	//to insert a JSON request into the DB
-	var payload []dbutils.Employee
+	var payload []entity.Employee
 
 	cursor, err1 := collection.Find(c, bson.M{})
 
@@ -121,7 +130,10 @@ To get records from the collection in the MongoDB using the search criteria as p
 func GetEmployee(c *gin.Context) {
 	// Implement logic to get employee from MongoDB
 
-	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017/")
+	config, err := config.BuildConfig()
+	dsn := fmt.Sprintf("mongodb://%s:%d/", config.Mongo.Host, config.Mongo.Port)
+	clientOptions := options.Client().ApplyURI(dsn)
+
 	client, err := mongo.Connect(c, clientOptions)
 	if err != nil {
 		log.Fatal(err)
@@ -132,14 +144,14 @@ func GetEmployee(c *gin.Context) {
 		log.Fatal(err)
 	}
 
-	collection := client.Database("testdb").Collection("employee")
+	collection := client.Database(config.Mongo.Database).Collection(config.Mongo.Collection)
 
 	jsonData, err := io.ReadAll(c.Request.Body)
 
 	var bdoc interface{}
 	bson.UnmarshalJSON(jsonData, &bdoc)
 
-	var payload []dbutils.Employee
+	var payload []entity.Employee
 
 	cursor, err1 := collection.Find(c, bdoc)
 
@@ -160,7 +172,12 @@ Utility function to initiate the DB connection with MYSQL DB. The format is -
 ("mysql", "user:password@tcp(host-ip:mysql-port)/db-name")
 */
 func createDBConn() *sql.DB {
-	db, err := sql.Open("mysql", "root:passw0rd@tcp(127.0.0.1:3306)/finance")
+
+	config, err := config.BuildConfig()
+	fmt.Print(config)
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", config.Mysql.User, config.Mysql.Password,
+		config.Mysql.Host, config.Mysql.Port, config.Mysql.Database)
+	db, err := sql.Open("mysql", dsn)
 
 	if err != nil {
 		panic(err.Error())
@@ -181,8 +198,8 @@ func GetOrders(c *gin.Context) {
 
 	rows, _ := db.Query("select * from orders")
 
-	var orderData []dbutils.Orders
-	var order dbutils.Orders
+	var orderData []entity.Orders
+	var order entity.Orders
 	for rows.Next() {
 
 		err := rows.Scan(&order.ID, &order.CustID, &order.Details)
@@ -213,7 +230,7 @@ func GetOrder(c *gin.Context) {
 	defer db.Close()
 
 	urlPathElements := strings.Split(c.Request.URL.Path, "/")
-	var order dbutils.Orders
+	var order entity.Orders
 
 	rows := db.QueryRow("select * from orders where order_id = ?", urlPathElements[4])
 
@@ -224,44 +241,8 @@ func GetOrder(c *gin.Context) {
 	}
 	c.Header("Content-Type", "application/json")
 	c.IndentedJSON(http.StatusOK, order)
-	//c.JSON(201, order)
 
 }
-
-/*
-func CreateOrder(c *gin.Context) {
-	// if there is an error opening the connection, handle it
-	db := createDBConn()
-
-	// defer the close till after the main function has finished
-	// executing
-	defer db.Close()
-
-	jsonData, err := io.ReadAll(c.Request.Body)
-
-	if err != nil {
-		fmt.Errorf("error occured during readin input data %w", err)
-	}
-
-	var payload map[string]interface{}
-
-	if err := json.Unmarshal(jsonData, &payload); err != nil {
-		fmt.Errorf("error occured during unmarshal data %w", err)
-	}
-
-	insertDynStmt := `insert into orders(order_id, order_cust_id, order_dtl) values (?, ?, ?)`
-
-	_, err1 := db.Exec(insertDynStmt, payload["order_id"], payload["order_cust_id"], payload["order_dtl"])
-
-	if err1 != nil {
-		fmt.Print(fmt.Errorf("error occured during db insert input data %w", err1).Error())
-	}
-
-	c.Header("Content-Type", "application/json")
-	c.IndentedJSON(http.StatusOK, jsonData)
-
-}
-*/
 
 /*
 Create a record in the DB as a POST. The input record will be in the format -
@@ -282,7 +263,7 @@ func CreateOrder(c *gin.Context) {
 	// executing
 	defer db.Close()
 
-	var payload dbutils.Orders
+	var payload entity.Orders
 
 	if err := c.BindJSON(&payload); err == nil {
 
