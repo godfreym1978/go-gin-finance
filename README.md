@@ -65,7 +65,7 @@ This will require an input to get the records from the collection. The Eg input 
 
 
 The application can be run as a docker container by building the container image first and then executing it -
-docker built -t go-gin-finance .
+docker build -t go-gin-finance .
 
 docker run -it -p 8080:8080 finance:latest 
 
